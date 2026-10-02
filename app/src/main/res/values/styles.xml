@@ -1,0 +1,10 @@
+<resources>
+    <!-- Tanpa ActionBar/judul bawaan; warna latar & status bar disamakan dengan app. -->
+    <style name="AppTheme" parent="@android:style/Theme.DeviceDefault.NoActionBar">
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowBackground">#06162F</item>
+        <item name="android:statusBarColor">#06162F</item>
+        <item name="android:navigationBarColor">#06162F</item>
+    </style>
+</resources>
