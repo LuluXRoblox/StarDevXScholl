@@ -10,6 +10,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.util.Base64;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -91,15 +92,20 @@ public class MainActivity extends Activity {
     }
 
     private WebResourceResponse serveApp(String url) {
-        if (url != null && url.startsWith("file:///android_asset/www/index.dat")) {
-            try {
-                return new WebResourceResponse("text/html", "UTF-8",
-                        getAssets().open("www/index.dat"));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        if (url == null || !url.startsWith("file:///android_asset/www/")) return null;
+        String path = url.substring("file:///android_asset/www/".length());
+        // The primary document keeps its legacy .dat suffix for AIDE compatibility;
+        // locally bundled editor modules are served from the same offline asset folder.
+        if (path.contains("..") || path.contains("/")) return null;
+        String mime = "text/javascript";
+        if ("index.dat".equals(path)) mime = "text/html";
+        else if (path.endsWith(".css")) mime = "text/css";
+        else if (path.endsWith(".svg")) mime = "image/svg+xml";
+        try {
+            return new WebResourceResponse(mime, "UTF-8", getAssets().open("www/" + path));
+        } catch (IOException e) {
+            return null;
         }
-        return null;
     }
 
     @Override
@@ -140,11 +146,33 @@ public class MainActivity extends Activity {
                 }
             });
         }
+
+        @JavascriptInterface
+        public void saveFileBase64(final String filename, final String dataUrl) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        int comma = dataUrl.indexOf(',');
+                        String encoded = comma >= 0 ? dataUrl.substring(comma + 1) : dataUrl;
+                        boolean ok = writeToDownloads(filename, Base64.decode(encoded, Base64.DEFAULT));
+                        Toast.makeText(MainActivity.this,
+                                ok ? "Tersimpan di Download/StarDevXSchool/" + filename : "Gagal menyimpan file",
+                                Toast.LENGTH_LONG).show();
+                    } catch (Exception e) {
+                        Toast.makeText(MainActivity.this, "Gagal menyimpan file", Toast.LENGTH_LONG).show();
+                    }
+                }
+            });
+        }
     }
 
     private boolean writeToDownloads(String filename, String content) {
+        return writeToDownloads(filename, content.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private boolean writeToDownloads(String filename, byte[] bytes) {
         try {
-            byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
 
             if (Build.VERSION.SDK_INT >= 29) {
                 // Android 10+: MediaStore, tidak perlu izin runtime.

@@ -122,7 +122,7 @@ html,body{background:var(--bg)}
 <div id="app"></div>
 
 <div id="showView">
-  <img id="showImg" alt="">
+  <img id="showImg" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="">
   <button id="showClose" class="btn">✕</button>
   <div id="showNav">
     <button class="btn" id="showPrev">‹</button>
@@ -151,7 +151,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--
 .bg i:nth-child(2){width:38vmax;height:38vmax;right:-10vmax;bottom:-8vmax;background:#d94f86;animation-delay:-6s}
 .bg i:nth-child(3){width:26vmax;height:26vmax;left:40%;top:35%;background:#0fb5a6;opacity:.28;animation-delay:-11s}
 .bg:after{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:44px 44px;-webkit-mask-image:radial-gradient(circle at 50% 50%,#000 30%,transparent 80%);mask-image:radial-gradient(circle at 50% 50%,#000 30%,transparent 80%)}
-.pt{position:fixed;inset:0;z-index:1;pointer-events:none}
+.pt{display:none!important;position:fixed;inset:0;z-index:1;pointer-events:none}
 .pt b{position:absolute;bottom:-20px;width:10px;height:14px;border-radius:70% 0 70% 0;background:var(--pink);opacity:0;animation:rise var(--du,14s) linear infinite}
 @keyframes drift{to{transform:translate(8vmax,6vmax) scale(1.15)}}
 @keyframes rise{0%{opacity:0;transform:translate3d(0,0,0) rotate(0)}12%{opacity:.7}50%{transform:translate3d(calc(var(--dx,40px)*-.6),-55vh,0) rotate(160deg)}100%{opacity:0;transform:translate3d(var(--dx,40px),-110vh,0) rotate(320deg)}}
@@ -173,7 +173,7 @@ h1{font-family:Georgia,"Times New Roman",serif;margin:0;line-height:1.1;font-siz
 .on h1.r{animation:up calc(.8s*var(--sp,1)) cubic-bezier(.22,.7,.2,1) calc((.25s + var(--i,1)*.18s)*var(--sp,1)) both,shine 6s ease-in-out 1.6s infinite alternate}
 @keyframes shine{from{background-position:0% 50%}to{background-position:100% 50%}}
 @keyframes glow{0%,100%{filter:drop-shadow(0 0 22px rgba(255,143,181,.45))}50%{filter:drop-shadow(0 0 46px rgba(255,190,120,.8))}}
-.bp{position:absolute;margin:-7px 0 0 -5px;border-radius:70% 0 70% 0;pointer-events:none;opacity:0;z-index:5;animation:petal 3.4s both;box-shadow:0 0 10px rgba(255,143,181,.45)}
+.bp{display:none!important;position:absolute;margin:-7px 0 0 -5px;border-radius:70% 0 70% 0;pointer-events:none;opacity:0;z-index:5;animation:petal 3.4s both;box-shadow:0 0 10px rgba(255,143,181,.45)}
 @keyframes petal{0%{opacity:0;transform:translate3d(0,0,0) scale(.2) rotate(0deg);animation-timing-function:cubic-bezier(.15,.75,.3,1)}12%{opacity:1}38%{opacity:1;transform:translate3d(var(--tx),var(--ty),0) scale(1) rotate(var(--r1));animation-timing-function:ease-in-out}100%{opacity:0;transform:translate3d(var(--fx),var(--fy),0) scale(.9) rotate(var(--r2))}}
 .halo{position:absolute;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;pointer-events:none;z-index:4;opacity:0;background:radial-gradient(circle,rgba(255,205,220,.55),rgba(255,143,181,.22) 42%,transparent 70%);animation:halo 1.8s cubic-bezier(.2,.7,.3,1) both}
 @keyframes halo{0%{opacity:.9;transform:scale(.3)}100%{opacity:0;transform:scale(3.4)}}
@@ -375,9 +375,12 @@ let _dbp = null;
 function openDB() {
   if (_dbp) return _dbp;
   _dbp = new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1);
+    const req = indexedDB.open(DB_NAME, 2);
     req.onupgradeneeded = () => {
-      req.result.createObjectStore(STORE, { keyPath: 'id' });
+      const d = req.result;
+      if (!d.objectStoreNames.contains(STORE)) d.createObjectStore(STORE, { keyPath: 'id' });
+      if (!d.objectStoreNames.contains('assets')) d.createObjectStore('assets', { keyPath: 'id' });
+      if (!d.objectStoreNames.contains('recovery')) d.createObjectStore('recovery', { keyPath: 'projectId' });
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
@@ -593,6 +596,7 @@ function route() {
   if (name === 'make') return renderMake();
   if (name === 'edit') return renderEdit(arg);
   if (name === 'show') return renderShow(arg);
+  if (name === 'present') return window.route ? window.route() : renderHome();
   renderHome();
 }
 
@@ -1226,5 +1230,6 @@ async function renderShow(id) {
   };
 }
 </script>
+<script src="editor.js"></script>
 </body>
 </html>
